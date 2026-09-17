@@ -140,6 +140,16 @@ function Index() {
   const [musicVolume, setMusicVolume] = useState(35);
   const [isFiveM, setIsFiveM] = useState(false);
 
+  const sendToFiveM = (eventName: string, data: Record<string, unknown> = {}) => {
+    const parent = (window as Window & { GetParentResourceName?: () => string }).GetParentResourceName;
+    if (typeof parent !== "function") return;
+    void fetch(`https://${parent()}/${eventName}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json; charset=UTF-8" },
+      body: JSON.stringify(data),
+    });
+  };
+
   useEffect(() => {
     setIsFiveM(typeof (window as Window & { GetParentResourceName?: () => string }).GetParentResourceName === "function");
   }, []);
@@ -184,8 +194,13 @@ function Index() {
 
   const chooseTile = (tile: Tile) => {
     playMenuSound(tile.id === "return" ? "close" : "select");
-    if (tile.id === "return") setMenuOpen(false);
-    else setActive(tile);
+    if (tile.id === "return") {
+      sendToFiveM("closePauseMenu");
+      setMenuOpen(false);
+    } else {
+      sendToFiveM("openSection", { section: tile.id });
+      setActive(tile);
+    }
   };
 
   return (
@@ -225,10 +240,10 @@ function Index() {
                 <span className="size-2 rounded-full bg-status" />
                 <span className="font-mono text-[11px] uppercase text-muted-foreground">128 / 256</span>
               </div>
-              <Button variant="icon" aria-label="Menühang ki- vagy bekapcsolása" title="Menühang" onClick={() => { setSoundEnabled((value) => !value); playMenuSound(); }}>
+              <Button variant="icon" aria-label="Menühang ki- vagy bekapcsolása" title="Menühang" onClick={() => { const next = !soundEnabled; setSoundEnabled(next); sendToFiveM("setMenuSound", { enabled: next }); playMenuSound(); }}>
                 {soundEnabled ? <Volume2 aria-hidden="true" /> : <VolumeX aria-hidden="true" />}
               </Button>
-              <Button variant="icon" aria-label="Menü bezárása" title="Menü bezárása" onClick={() => { playMenuSound("close"); setMenuOpen(false); }}>
+              <Button variant="icon" aria-label="Menü bezárása" title="Menü bezárása" onClick={() => { playMenuSound("close"); sendToFiveM("closePauseMenu"); setMenuOpen(false); }}>
                 <X aria-hidden="true" />
               </Button>
             </div>
@@ -317,12 +332,16 @@ function Index() {
                   min="0"
                   max="100"
                   value={musicVolume}
-                  onChange={(event) => setMusicVolume(Number(event.target.value))}
+                  onChange={(event) => {
+                    const nextVolume = Number(event.target.value);
+                    setMusicVolume(nextVolume);
+                    sendToFiveM("setMusicVolume", { volume: nextVolume / 100 });
+                  }}
                   className="volume-slider w-full"
                 />
                 <div className="mt-4 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4">
                   <span className="text-sm text-muted-foreground">Menü hangjelzések</span>
-                  <Button variant="icon" aria-label="Menühang ki- vagy bekapcsolása" onClick={() => setSoundEnabled((value) => !value)}>
+                  <Button variant="icon" aria-label="Menühang ki- vagy bekapcsolása" onClick={() => { const next = !soundEnabled; setSoundEnabled(next); sendToFiveM("setMenuSound", { enabled: next }); }}>
                     {soundEnabled ? <Volume2 /> : <VolumeX />}
                   </Button>
                 </div>
