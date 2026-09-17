@@ -75,6 +75,7 @@
     font-family: var(--font-sans);
     letter-spacing: 0;
   }
+  html, body { background-color: transparent; }
   button { cursor: pointer; }
 }
 
@@ -96,6 +97,11 @@
   animation: tile-in 480ms cubic-bezier(.2,.75,.25,1) forwards;
 }
 .animate-detail-in { animation: detail-in 220ms ease-out both; }
+
+.volume-slider {
+  accent-color: var(--color-primary);
+  cursor: pointer;
+}
 
 @keyframes tile-in {
   from { opacity: 0; transform: translateY(12px); }

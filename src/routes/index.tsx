@@ -7,15 +7,25 @@ import {
   Gamepad2,
   LogOut,
   MapPinned,
+  Music2,
   Newspaper,
   Settings,
   ShieldCheck,
   UsersRound,
+  Volume2,
+  VolumeX,
   X,
   Zap,
 } from "lucide-react";
 import { useEffect, useState, type ElementType } from "react";
 import cityImage from "@/assets/szcode-city.jpg";
+import playersImage from "@/assets/tile-players.jpg";
+import settingsImage from "@/assets/tile-settings.jpg";
+import newsImage from "@/assets/tile-news.jpg";
+import rulesImage from "@/assets/tile-rules.jpg";
+import mapImage from "@/assets/tile-map.jpg";
+import helpImage from "@/assets/tile-help.jpg";
+import returnImage from "@/assets/tile-return.jpg";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -46,7 +56,7 @@ type Tile = {
   description: string;
   icon: ElementType;
   area: string;
-  image?: boolean;
+  image: string;
   accent?: boolean;
   position?: string;
 };
@@ -59,7 +69,7 @@ const tiles: Tile[] = [
     description: "128 játékos online",
     icon: UsersRound,
     area: "tile-players",
-    image: true,
+    image: playersImage,
     position: "object-left",
   },
   {
@@ -69,6 +79,7 @@ const tiles: Tile[] = [
     description: "Grafika, hang és irányítás",
     icon: Settings,
     area: "tile-settings",
+    image: settingsImage,
   },
   {
     id: "news",
@@ -77,7 +88,7 @@ const tiles: Tile[] = [
     description: "Megérkezett a Night Shift frissítés",
     icon: Newspaper,
     area: "tile-news",
-    image: true,
+    image: newsImage,
     position: "object-right",
   },
   {
@@ -87,6 +98,7 @@ const tiles: Tile[] = [
     description: "Játssz tisztán. Maradj karakterben.",
     icon: BookOpenText,
     area: "tile-rules",
+    image: rulesImage,
   },
   {
     id: "map",
@@ -95,7 +107,7 @@ const tiles: Tile[] = [
     description: "Helyszínek és útvonalak",
     icon: MapPinned,
     area: "tile-map",
-    image: true,
+    image: mapImage,
     accent: true,
     position: "object-center",
   },
@@ -106,6 +118,7 @@ const tiles: Tile[] = [
     description: "Parancsok és gyakori kérdések",
     icon: CircleHelp,
     area: "tile-help",
+    image: helpImage,
   },
   {
     id: "return",
@@ -114,6 +127,7 @@ const tiles: Tile[] = [
     description: "ESC billentyűvel is bezárható",
     icon: Gamepad2,
     area: "tile-return",
+    image: returnImage,
     accent: true,
   },
 ];
@@ -122,6 +136,42 @@ function Index() {
   const [menuOpen, setMenuOpen] = useState(true);
   const [active, setActive] = useState<Tile | null>(null);
   const [time, setTime] = useState("18:33");
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [musicVolume, setMusicVolume] = useState(35);
+  const [isFiveM, setIsFiveM] = useState(false);
+
+  const sendToFiveM = (eventName: string, data: Record<string, unknown> = {}) => {
+    const parent = (window as Window & { GetParentResourceName?: () => string }).GetParentResourceName;
+    if (typeof parent !== "function") return;
+    void fetch(`https://${parent()}/${eventName}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json; charset=UTF-8" },
+      body: JSON.stringify(data),
+    });
+  };
+
+  useEffect(() => {
+    setIsFiveM(typeof (window as Window & { GetParentResourceName?: () => string }).GetParentResourceName === "function");
+  }, []);
+
+  const playMenuSound = (tone: "select" | "close" = "select") => {
+    if (!soundEnabled) return;
+    const AudioContextClass = window.AudioContext ??
+      (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    if (!AudioContextClass) return;
+    const context = new AudioContextClass();
+    const oscillator = context.createOscillator();
+    const gain = context.createGain();
+    oscillator.type = "sine";
+    oscillator.frequency.setValueAtTime(tone === "select" ? 620 : 330, context.currentTime);
+    gain.gain.setValueAtTime(0.0001, context.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.055, context.currentTime + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + 0.11);
+    oscillator.connect(gain).connect(context.destination);
+    oscillator.start();
+    oscillator.stop(context.currentTime + 0.12);
+    oscillator.addEventListener("ended", () => void context.close());
+  };
 
   useEffect(() => {
     const updateTime = () =>
@@ -143,19 +193,27 @@ function Index() {
   }, [active]);
 
   const chooseTile = (tile: Tile) => {
-    if (tile.id === "return") setMenuOpen(false);
-    else setActive(tile);
+    playMenuSound(tile.id === "return" ? "close" : "select");
+    if (tile.id === "return") {
+      sendToFiveM("closePauseMenu");
+      setMenuOpen(false);
+    } else {
+      sendToFiveM("openSection", { section: tile.id });
+      setActive(tile);
+    }
   };
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-background text-foreground">
-      <img
-        src={cityImage}
-        alt="Esti panoráma a fiktív Los Santos városáról"
-        width={1920}
-        height={1080}
-        className="absolute inset-0 h-full w-full object-cover"
-      />
+      {!isFiveM && (
+        <img
+          src={cityImage}
+          alt="Esti panoráma a fiktív Los Santos városáról"
+          width={1920}
+          height={1080}
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+      )}
       <div className="absolute inset-0 bg-scene-wash" aria-hidden="true" />
 
       {!menuOpen ? (
@@ -182,7 +240,10 @@ function Index() {
                 <span className="size-2 rounded-full bg-status" />
                 <span className="font-mono text-[11px] uppercase text-muted-foreground">128 / 256</span>
               </div>
-              <Button variant="icon" aria-label="Menü bezárása" title="Menü bezárása" onClick={() => setMenuOpen(false)}>
+              <Button variant="icon" aria-label="Menühang ki- vagy bekapcsolása" title="Menühang" onClick={() => { const next = !soundEnabled; setSoundEnabled(next); sendToFiveM("setMenuSound", { enabled: next }); playMenuSound(); }}>
+                {soundEnabled ? <Volume2 aria-hidden="true" /> : <VolumeX aria-hidden="true" />}
+              </Button>
+              <Button variant="icon" aria-label="Menü bezárása" title="Menü bezárása" onClick={() => { playMenuSound("close"); sendToFiveM("closePauseMenu"); setMenuOpen(false); }}>
                 <X aria-hidden="true" />
               </Button>
             </div>
@@ -203,16 +264,14 @@ function Index() {
                     )}
                     style={{ animationDelay: `${index * 55}ms` }}
                   >
-                    {tile.image && (
-                      <img
-                        src={cityImage}
-                        alt=""
-                        width={1920}
-                        height={1080}
-                        loading="lazy"
-                        className={cn("absolute inset-0 h-full w-full object-cover opacity-35 transition duration-500 group-hover:scale-105 group-hover:opacity-50", tile.position)}
-                      />
-                    )}
+                    <img
+                      src={tile.image}
+                      alt=""
+                      width={1024}
+                      height={768}
+                      loading="lazy"
+                      className={cn("absolute inset-0 h-full w-full object-cover opacity-45 transition duration-500 group-hover:scale-105 group-hover:opacity-65", tile.position)}
+                    />
                     <div className="absolute inset-0 bg-tile-wash" aria-hidden="true" />
                     <div className="relative flex h-full w-full flex-col justify-between p-4 sm:p-5">
                       <div className="flex items-start justify-between gap-3">
@@ -258,7 +317,37 @@ function Index() {
             </div>
             <div className="my-6 h-px bg-border" />
             <p className="text-sm leading-6 text-muted-foreground">{active.description}. Ez a felület készen áll a FiveM események és saját adatok bekötésére.</p>
-            <Button className="mt-7" onClick={() => setActive(null)}>Rendben</Button>
+            {active.id === "settings" && (
+              <div className="mt-6 rounded-md border border-border bg-icon p-4">
+                <div className="mb-3 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4">
+                  <label htmlFor="music-volume" className="flex min-w-0 items-center gap-2 text-sm font-medium">
+                    <Music2 className="shrink-0 text-primary" size={18} aria-hidden="true" />
+                    <span className="truncate">Zenei hangerő</span>
+                  </label>
+                  <span className="font-mono text-xs text-primary">{musicVolume}%</span>
+                </div>
+                <input
+                  id="music-volume"
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={musicVolume}
+                  onChange={(event) => {
+                    const nextVolume = Number(event.target.value);
+                    setMusicVolume(nextVolume);
+                    sendToFiveM("setMusicVolume", { volume: nextVolume / 100 });
+                  }}
+                  className="volume-slider w-full"
+                />
+                <div className="mt-4 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4">
+                  <span className="text-sm text-muted-foreground">Menü hangjelzések</span>
+                  <Button variant="icon" aria-label="Menühang ki- vagy bekapcsolása" onClick={() => { const next = !soundEnabled; setSoundEnabled(next); sendToFiveM("setMenuSound", { enabled: next }); }}>
+                    {soundEnabled ? <Volume2 /> : <VolumeX />}
+                  </Button>
+                </div>
+              </div>
+            )}
+            <Button className="mt-7" onClick={() => { playMenuSound("close"); setActive(null); }}>Rendben</Button>
           </div>
         </div>
       )}
