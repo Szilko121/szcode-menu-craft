@@ -4,4 +4,4 @@
 - [x] Minden menücsempe kapjon saját, témához illő képet
 - [x] A térkép csempéhez készüljön egyedi várostérkép
 - [x] Kerüljön be kapcsolható menühang és zenei hangerőszabályzó
-- [ ] Mobil és asztali működés ellenőrzése
+- [x] Mobil és asztali működés ellenőrzése
