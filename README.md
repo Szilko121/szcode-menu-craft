@@ -1,14 +1,16 @@
-# Welcome to your Lovable project
+# SzCode Custom Menu
+
+Fivemhez kelene nekem saját pause menu hasonlóan nezen ki mint ami a képen van csak saját legyen ugyan úgy ilyen képes megadásával és ugyan ez a grides vagy mi ez rendszerel és ugye a fejlesztő az SzCode
 
 This project was built with [Lovable](https://lovable.dev).
 
 ## Build with Lovable
 
-Open your project in the [Lovable editor](https://lovable.dev) and keep building.
+Continue developing this project in the [Lovable editor](https://lovable.dev/projects/5d97b5ca-97b9-426b-b98a-2429b0075195).
 
 - **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: connect the project to GitHub and every change made in Lovable is committed straight to your repository.
-- **Full ownership**: this code is yours. Push to your repository and your changes sync back into Lovable, ready for your next prompt.
+- **Stay in sync**: every change made in Lovable is committed straight to this repository.
+- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
 
 ## Development
 
@@ -20,10 +22,3 @@ cd <repository-name>
 npm i
 npm run dev
 ```
-
-## Built with
-
-- TanStack Start
-- TypeScript
-- React
-- Tailwind CSS
